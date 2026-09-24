@@ -18,6 +18,8 @@ import { UserBetHistoryModal } from "./components/UserBetHistoryModal";
 import { GameRulesModal } from "./components/GameRulesModal";
 import { TransparencyCharterModal } from "./components/TransparencyCharterModal";
 import { ReferralModal } from "./components/ReferralModal";
+import { SideNavDrawer } from "./components/SideNavDrawer";
+import { ActiveOnlineUsersModal } from "./components/ActiveOnlineUsersModal";
 import { sound } from "./utils/audio";
 
 export default function App() {
@@ -29,7 +31,10 @@ export default function App() {
   const [lang, setLang] = useState<"bn" | "en">("bn");
   const [telemetry, setTelemetry] = useState<HighLoadTelemetry | null>(null);
 
-  // Modals state
+  // Modals & Overlays state
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [isOnlineUsersOpen, setIsOnlineUsersOpen] = useState<boolean>(false);
+  const [showRegulatoryFooter, setShowRegulatoryFooter] = useState<boolean>(false);
   const [isWalletOpen, setIsWalletOpen] = useState<boolean>(false);
   const [isQuickDepositOpen, setIsQuickDepositOpen] = useState<boolean>(false);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
@@ -183,8 +188,6 @@ export default function App() {
         voiceEnabled={voiceEnabled}
         onToggleVoice={handleToggleVoice}
         onOpenWallet={() => setIsWalletOpen(true)}
-        onOpenQuickDeposit={() => setIsQuickDepositOpen(true)}
-        onOpenProfile={() => setIsProfileOpen(true)}
         onOpenProvablyFair={handleOpenProvablyFair}
         onOpenRoadmap={handleOpenRoadmap}
         onOpenAdmin={() => setIsAdminOpen(true)}
@@ -196,11 +199,9 @@ export default function App() {
           setTransparencyTab("charter");
           setIsTransparencyOpen(true);
         }}
-        onOpenPublicUsers={() => {
-          setTransparencyTab("publicUsers");
-          setIsTransparencyOpen(true);
-        }}
         onOpenReferral={() => setIsReferralOpen(true)}
+        onOpenMenu={() => setIsMenuOpen(true)}
+        onOpenOnlineUsers={() => setIsOnlineUsersOpen(true)}
         onLogout={handleLogout}
         onToggleBalanceType={handleToggleBalanceType}
         lang={lang}
@@ -208,7 +209,7 @@ export default function App() {
         telemetryPlayerCount={telemetry?.totalActivePlayers || 284592}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-2 sm:px-4 lg:px-8 py-3 sm:py-6 pb-24 md:pb-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-2 sm:px-4 lg:px-8 py-2 sm:py-4 pb-20 md:pb-6">
         {activeTab === "game" && (
           <GameTable
             user={user}
@@ -218,6 +219,7 @@ export default function App() {
             onOpenRoadmap={handleOpenRoadmap}
             onOpenBetHistory={() => setIsBetHistoryOpen(true)}
             onOpenRules={() => setIsGameRulesOpen(true)}
+            onOpenProfile={() => setIsProfileOpen(true)}
           />
         )}
         {activeTab === "p2p" && <P2PLobby user={user} onUpdateWallet={setUser} />}
@@ -229,16 +231,100 @@ export default function App() {
         )}
       </main>
 
-      {/* Official Regulatory & High-Load Distributed Architecture Footer */}
-      <RegulatoryFooter
+      {/* Conditionally render Regulatory Footer on secondary views or when requested from Menu */}
+      {(activeTab !== "game" || showRegulatoryFooter) && (
+        <RegulatoryFooter
+          lang={lang}
+          telemetry={telemetry}
+          onOpenProvablyFair={handleOpenProvablyFair}
+          onOpenLiquidity={() => setIsLiquidityOpen(true)}
+          onOpenTransparency={() => setIsTransparencyOpen(true)}
+          onOpenRules={() => setIsGameRulesOpen(true)}
+          onOpenReferral={() => setIsReferralOpen(true)}
+        />
+      )}
+
+      {/* Side Navigation Menu Drawer */}
+      <SideNavDrawer
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        user={user}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
         lang={lang}
-        telemetry={telemetry}
-        onOpenProvablyFair={handleOpenProvablyFair}
-        onOpenLiquidity={() => setIsLiquidityOpen(true)}
-        onOpenTransparency={() => setIsTransparencyOpen(true)}
-        onOpenRules={() => setIsGameRulesOpen(true)}
-        onOpenReferral={() => setIsReferralOpen(true)}
+        onToggleLang={() => setLang((l) => (l === "bn" ? "en" : "bn"))}
+        soundEnabled={soundEnabled}
+        onToggleSound={handleToggleSound}
+        voiceEnabled={voiceEnabled}
+        onToggleVoice={handleToggleVoice}
+        onOpenWallet={() => {
+          setIsMenuOpen(false);
+          setIsWalletOpen(true);
+        }}
+        onOpenProfile={() => {
+          setIsMenuOpen(false);
+          setIsProfileOpen(true);
+        }}
+        onOpenProvablyFair={() => {
+          setIsMenuOpen(false);
+          handleOpenProvablyFair();
+        }}
+        onOpenRoadmap={() => {
+          setIsMenuOpen(false);
+          handleOpenRoadmap();
+        }}
+        onOpenRules={() => {
+          setIsMenuOpen(false);
+          setIsGameRulesOpen(true);
+        }}
+        onOpenTransparency={() => {
+          setIsMenuOpen(false);
+          setTransparencyTab("charter");
+          setIsTransparencyOpen(true);
+        }}
+        onOpenPublicUsers={() => {
+          setIsMenuOpen(false);
+          setTransparencyTab("publicUsers");
+          setIsTransparencyOpen(true);
+        }}
+        onOpenBetHistory={() => {
+          setIsMenuOpen(false);
+          setIsBetHistoryOpen(true);
+        }}
+        onOpenSiteLiquidity={() => {
+          setIsMenuOpen(false);
+          setIsLiquidityOpen(true);
+        }}
+        onOpenReferral={() => {
+          setIsMenuOpen(false);
+          setIsReferralOpen(true);
+        }}
+        onOpenAdmin={() => {
+          setIsMenuOpen(false);
+          setIsAdminOpen(true);
+        }}
+        onOpenMerchant={() => {
+          setIsMenuOpen(false);
+          setIsMerchantOpen(true);
+        }}
+        onToggleRegulatoryFooter={() => setShowRegulatoryFooter((prev) => !prev)}
+        showRegulatoryFooter={showRegulatoryFooter}
+        onToggleBalanceType={handleToggleBalanceType}
+        onLogout={() => {
+          setIsMenuOpen(false);
+          handleLogout();
+        }}
       />
+
+      {/* Online Active Users Transparency Modal */}
+      {isOnlineUsersOpen && (
+        <ActiveOnlineUsersModal
+          isOpen={isOnlineUsersOpen}
+          onClose={() => setIsOnlineUsersOpen(false)}
+          onlineCount={telemetry?.totalActivePlayers || 284592}
+          lang={lang}
+        />
+      )}
 
       {/* MODALS */}
       {isReferralOpen && (

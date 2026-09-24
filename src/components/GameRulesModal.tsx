@@ -265,25 +265,25 @@ export const GameRulesModal: React.FC<GameRulesModalProps> = ({
                       <tr>
                         <td className="py-2.5 font-bold text-neutral-400">TIE (ফলাফল)</td>
                         <td className="py-2.5 text-neutral-300">{isBn ? "উভয় কার্ড সমান (নো-বেট জোন)" : "Equal ranks (Outcome only)"}</td>
-                        <td className="py-2.5 font-bold text-amber-400">৫০% রিফান্ড</td>
-                        <td className="py-2.5 text-neutral-400">{isBn ? "৫০% কোম্পানি ফান্ডে" : "50% to company fund"}</td>
+                        <td className="py-2.5 font-bold text-red-400">{isBn ? "১০০% বাজেয়াপ্ত (Loss)" : "100% Loss"}</td>
+                        <td className="py-2.5 text-neutral-400">{isBn ? "১০০% কোম্পানি প্রফিট" : "100% Company Profit"}</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
 
-                {/* Tie 50% Refund Guarantee Policy */}
-                <div className="mt-3 p-3 bg-gradient-to-r from-amber-500/10 via-neutral-900 to-amber-500/10 border border-amber-500/40 rounded-xl space-y-1.5">
+                {/* Tie 100% Loss (Bajeapto) Policy */}
+                <div className="mt-3 p-3 bg-gradient-to-r from-red-500/10 via-neutral-900 to-red-500/10 border border-red-500/40 rounded-xl space-y-1.5">
                   <div className="flex items-center gap-2">
-                    <Scale className="w-4 h-4 text-amber-400" />
-                    <h4 className="text-xs sm:text-sm font-bold text-amber-300">
-                      {isBn ? "🚫 Tie-তে বাজি ধরা যাবে না & ৫০% রিফান্ড নীতি" : "🚫 Tie is Non-Bettable & 50% Stake Refund Rule"}
+                    <Scale className="w-4 h-4 text-red-400" />
+                    <h4 className="text-xs sm:text-sm font-bold text-red-300">
+                      {isBn ? "🚫 Tie-তে বাজি ধরা যাবে না & ১০০% বাজেয়াপ্ত নীতি" : "🚫 Tie is Non-Bettable & 100% Loss Rule"}
                     </h4>
                   </div>
                   <p className="text-[11px] sm:text-xs text-neutral-300 leading-relaxed">
                     {isBn
-                      ? "আমাদের প্ল্যাটফর্মে Tie-তে সরাসরি কোনো বাজি ধরা যায় না। খেলোয়াড়রা শুধুমাত্র Dragon অথবা Tiger-এ বাজি ধরতে পারবেন। যদি রাউন্ডের ফলাফল TIE (উভয় কার্ড সমান) হয়, তবে উভয় পক্ষের খেলোয়াড়রা তাঁদের বাজির ৫০% টাকা সাথে সাথে ওয়ালেটে রিফান্ড ফেরত পাবেন এবং বাকি ৫০% কোম্পানি ফান্ডে জমা হবে।"
-                      : "Direct betting on Tie is strictly prohibited. Players only wager on Dragon or Tiger. If a round results in a TIE (both cards equal), all players automatically receive an immediate 50% stake refund credited back to their wallet, and 50% goes to the company liquidity fund."}
+                      ? "আমাদের প্ল্যাটফর্মে Tie-তে সরাসরি বাজি ধরা সম্পূর্ণ নিষিদ্ধ। খেলোয়াড়রা শুধুমাত্র Dragon অথবা Tiger-এ বাজি ধরতে পারবেন। যদি রাউন্ডের ফলাফল TIE (উভয় কার্ড সমান) হয়, তবে আন্তর্জাতিক হাই-এন্ড গেমিং রুলস অনুযায়ী ড্রাগন এবং টাইগার উভয় পক্ষের সমস্ত বাজি বাজেয়াপ্ত (100% Loss) হবে এবং সম্পূর্ণ টাকা কোম্পানির প্রফিট ফান্ডে চলে যাবে।"
+                      : "Direct betting on Tie is prohibited. Players only wager on Dragon or Tiger. If a round results in a TIE (both cards equal), all Dragon and Tiger matched bets are forfeited (100% Loss) as platform yield, and 100% goes to the company fund."}
                   </p>
                 </div>
               </div>

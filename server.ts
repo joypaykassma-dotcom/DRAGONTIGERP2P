@@ -563,8 +563,8 @@ setInterval(() => {
             // Financial settlement per mathematical proof
             const matchedM = round.matchedAmount;
             if (round.result === "TIE") {
-              // 50% Tie Refund Rule: Dragon & Tiger bettors get 50% refund, 50% goes to company fund
-              round.tieRevenue = matchedM * 2 * 0.5;
+              // 100% Tie Capture Rule: Matched pool is locked 100% as company profit (Loss for Dragon & Tiger bettors)
+              round.tieRevenue = matchedM * 2;
               round.commission = 0;
               metrics.todayTieRevenue += round.tieRevenue;
             } else {
@@ -594,12 +594,11 @@ setInterval(() => {
                   bet.tkReturnStatus = "RETURNED_WIN";
                   bet.returnedAmount = (bet.returnedAmount || 0) + bet.payout;
                 } else {
-                  // 50% refund on TIE for Dragon & Tiger bets; remaining 50% goes to company fund!
-                  const tieRefundAmount = Math.floor(matchedStake * 0.5);
-                  bet.status = "TIE_REFUND";
-                  bet.payout = tieRefundAmount;
-                  bet.tkReturnStatus = "RETURNED_REFUND";
-                  bet.returnedAmount = (bet.returnedAmount || 0) + tieRefundAmount;
+                  // Tie (টাই) রুলস অনুযায়ী উভয় পক্ষের সমস্ত প্লেয়ারের টাকা বাজেয়াপ্ত (100% Loss)
+                  bet.status = "LOST";
+                  bet.payout = 0;
+                  bet.tkReturnStatus = "NO_RETURN";
+                  bet.returnedAmount = 0;
                 }
               } else if (bet.side === round.result) {
                 bet.status = "WON";
@@ -648,19 +647,15 @@ setInterval(() => {
                       description: `Tie 8x Win on ${tbl.config.name} Round #${round.roundNumber}`,
                     });
                   } else {
-                    // Dragon / Tiger 50% refund to user wallet; 50% retained by company fund
-                    const tieRefund = Math.floor(matchedStake * 0.5);
-                    const companyFundShare = matchedStake - tieRefund;
-                    if (bet.balanceType === "real") user.balance += tieRefund;
-                    else user.demoBalance += tieRefund;
-                    user.totalLost += companyFundShare;
-                    recordSettledBetOnUserStats(user, bet, true, "TIE", slug as any, tbl.config.name, companyFundShare, false);
+                    // Dragon / Tiger 100% loss on Tie to company ledger
+                    user.totalLost += matchedStake;
+                    recordSettledBetOnUserStats(user, bet, true, "TIE", slug as any, tbl.config.name, matchedStake, false);
                     user.transactions.unshift({
-                      id: `tx_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-                      type: "refund",
-                      amount: tieRefund,
+                      id: `tx_tie_loss_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+                      type: "loss",
+                      amount: matchedStake,
                       timestamp: new Date().toISOString(),
-                      description: `50% Tie Refund: ৳${tieRefund.toLocaleString()} returned to wallet (50% to Company Fund) on ${tbl.config.name} Round #${round.roundNumber}`,
+                      description: `Tie 100% Bajeapto Loss: ৳${matchedStake.toLocaleString()} lost to Company Ledger on ${tbl.config.name} Round #${round.roundNumber}`,
                     });
                   }
                 } else if (bet.side === round.result) {
@@ -929,13 +924,22 @@ app.post("/api/game/bet", (req, res) => {
   const normalizedSide = (side || "").toString().toUpperCase();
   if (normalizedSide === "TIE") {
     return res.status(400).json({
-      error: "🚫 Tie-তে বাজি ধরা সম্পূর্ণ নিষিদ্ধ। শুধুমাত্র Dragon অথবা Tiger-এ বাজি ধরুন। টাই হলে খেলোয়াড় তাঁর বাজির ৫০% টাকা ইনস্ট্যান্ট রিফান্ড পাবেন।",
+      error: "🚫 Tie-তে বাজি ধরা সম্পূর্ণ নিষিদ্ধ। শুধুমাত্র Dragon অথবা Tiger-এ বাজি ধরুন। টাই (Tie) হলে ক্যাসিনো রুলস অনুযায়ী উভয় পক্ষের বাজি বাজেয়াপ্ত (Loss) হবে এবং সম্পূর্ণ টাকা কোম্পানি ফান্ডে যাবে।",
     });
   }
 
   if (normalizedSide !== "DRAGON" && normalizedSide !== "TIGER") {
     return res.status(400).json({
       error: "Invalid bet side. Only DRAGON or TIGER allowed.",
+    });
+  }
+
+  // Self-Matching Block: Ensure player cannot bet on both opposing sides
+  const opposingSide = normalizedSide === "DRAGON" ? "TIGER" : "DRAGON";
+  const hasOpposingBet = tbl.playerBets.some(b => b.userId === userId && b.side === opposingSide && b.balanceType === balanceType);
+  if (hasOpposingBet) {
+    return res.status(400).json({
+      error: "🚫 একই রাউন্ডে ড্রাগন এবং টাইগার উভয় পাশে বাজি ধরা সম্পূর্ণ নিষিদ্ধ (Self-Matching Block)। অনুগ্রহ করে যেকোনো এক পাশে বাজি বজায় রাখুন।"
     });
   }
 

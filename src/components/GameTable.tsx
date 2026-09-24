@@ -27,13 +27,14 @@ import {
   ChevronUp,
   ArrowRight,
   Award,
+  User,
 } from "lucide-react";
 import { UserWallet, TableRound, RoadmapItem, PlayingCard, LiveBetRecord } from "../types";
+import { PlayingCard as PlayingCardComponent } from "./PlayingCard";
 import { useSoundManager } from "../utils/useSoundManager";
 import { LiveChat } from "./LiveChat";
 import { LiveBetFeed } from "./LiveBetFeed";
 import { LiveAction } from "./LiveAction";
-import { UserTkReturnMonitor } from "./UserTkReturnMonitor";
 
 interface GameTableProps {
   user: UserWallet;
@@ -43,6 +44,7 @@ interface GameTableProps {
   onOpenRoadmap: () => void;
   onOpenBetHistory?: () => void;
   onOpenRules?: () => void;
+  onOpenProfile?: () => void;
 }
 
 export const GameTable: React.FC<GameTableProps> = ({
@@ -53,6 +55,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   onOpenRoadmap,
   onOpenBetHistory,
   onOpenRules,
+  onOpenProfile,
 }) => {
   // SoundManager Hook
   const soundManager = useSoundManager();
@@ -78,7 +81,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   const [dealerCommentary, setDealerCommentary] = useState<string>(
     "Welcome to the VIP Dragon Tiger Arena. Place your stakes before the timer expires!"
   );
-  const [sidebarTab, setSidebarTab] = useState<"liveAction" | "returns" | "chat" | "roadmap" | "guide">("guide");
+  const [sidebarTab, setSidebarTab] = useState<"liveAction" | "chat" | "roadmap" | "guide">("liveAction");
   const [showAudioControls, setShowAudioControls] = useState<boolean>(false);
   const [tieRefundBanner, setTieRefundBanner] = useState<{ amount: number; roundNumber: number } | null>(null);
   const [streakCelebration, setStreakCelebration] = useState<{ streak: number; roundNumber: number } | null>(null);
@@ -225,9 +228,9 @@ export const GameTable: React.FC<GameTableProps> = ({
                   ? Math.floor(activeConfirmedBet.amount * 8)
                   : Math.floor(activeConfirmedBet.amount * 1.9);
               } else if (winner === "TIE" && (activeConfirmedBet.side === "DRAGON" || activeConfirmedBet.side === "TIGER")) {
-                // 50% Tie Refund Rule!
-                tieRefund = Math.floor(activeConfirmedBet.amount * 0.5);
-                setTieRefundBanner({ amount: tieRefund, roundNumber: data.round.roundNumber });
+                // Tie (টাই) রুলস অনুযায়ী উভয় পক্ষের বাজি ১০০% বাজেয়াপ্ত (100% Loss)
+                tieRefund = 0;
+                setTieRefundBanner({ amount: activeConfirmedBet.amount, roundNumber: data.round.roundNumber });
               }
             }
 
@@ -427,194 +430,11 @@ export const GameTable: React.FC<GameTableProps> = ({
   // Timer visualization
   const maxTimer = currentRound?.totalDuration || 30;
   const timeLeft = currentRound?.secondsRemaining ?? maxTimer;
-  const strokeDash = 283;
+  const strokeDash = 264;
   const strokeDashoffset = strokeDash - (strokeDash * timeLeft) / maxTimer;
 
   return (
     <div className="space-y-4">
-      {/* Top Banner, Live Croupier Commentary & Audio Manager Controls */}
-      <div className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-2.5 sm:p-3 flex flex-col sm:flex-row items-center justify-between gap-2.5 shadow-md">
-        <div className="flex items-center gap-2.5 truncate w-full sm:w-auto">
-          <div className="w-8 h-8 rounded-lg bg-neutral-950 border border-red-500/40 flex items-center justify-center text-red-500 flex-shrink-0 relative">
-            <Radio className="w-4 h-4 text-red-500 animate-pulse" />
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 animate-ping" />
-          </div>
-          <div className="truncate">
-            <div className="text-[10px] text-neutral-400 font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 truncate">
-              <span className="text-red-400 font-black">● LIVE HD</span>
-              <span>·</span>
-              <span className="text-amber-300 truncate">ELENA S. (STUDIO 4)</span>
-            </div>
-            <p className="text-xs text-neutral-200 font-medium italic truncate">
-              "{dealerCommentary}"
-            </p>
-          </div>
-        </div>
-
-        {/* Casino Sound & Voice Controls + Modal Buttons */}
-        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
-          {/* Sound FX Toggle */}
-          <button
-            onClick={() => {
-              soundManager.toggleSfx();
-              soundManager.playButtonClick();
-            }}
-            title={soundManager.sfxEnabled ? "Casino Sound FX: Active" : "Casino Sound FX: Muted"}
-            className={`p-1.5 sm:p-2 rounded-xl border text-xs font-semibold flex items-center gap-1 transition-all ${
-              soundManager.sfxEnabled
-                ? "bg-neutral-800 border-neutral-700 text-emerald-400 hover:bg-neutral-700"
-                : "bg-neutral-950 border-neutral-800 text-neutral-500"
-            }`}
-          >
-            {soundManager.sfxEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-            <span className="hidden xl:inline">{soundManager.sfxEnabled ? "SFX On" : "Muted"}</span>
-          </button>
-
-          {/* Croupier Voice Toggle */}
-          <button
-            onClick={() => {
-              soundManager.toggleVoice();
-              soundManager.playButtonClick();
-            }}
-            title={soundManager.voiceEnabled ? "Live Croupier Voice: Active" : "Live Croupier Voice: Muted"}
-            className={`p-1.5 sm:p-2 rounded-xl border text-xs font-semibold flex items-center gap-1 transition-all ${
-              soundManager.voiceEnabled
-                ? "bg-amber-500/15 border-amber-500/40 text-amber-300 hover:bg-amber-500/25"
-                : "bg-neutral-950 border-neutral-800 text-neutral-500"
-            }`}
-          >
-            {soundManager.voiceEnabled ? <Mic className="w-3.5 h-3.5 text-amber-400" /> : <MicOff className="w-3.5 h-3.5" />}
-            <span className="hidden xl:inline">{soundManager.voiceEnabled ? "Voice On" : "Muted"}</span>
-          </button>
-
-          {/* Audio Suite Quick Menu Button */}
-          <div className="relative">
-            <button
-              onClick={() => setShowAudioControls(!showAudioControls)}
-              title="Casino Sound & Voice Studio"
-              className="px-2 py-1.5 rounded-xl text-xs font-bold bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700 transition-colors flex items-center gap-1"
-            >
-              <Coins className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">Audio</span>
-            </button>
-
-            {/* Audio Studio Popup Dropdown */}
-            {showAudioControls && (
-              <div className="absolute right-0 top-11 z-50 w-72 bg-neutral-950 border border-neutral-800 rounded-2xl p-4 shadow-2xl space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
-                  <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                    <Headphones className="w-3.5 h-3.5 text-amber-400" />
-                    Casino Sound Manager
-                  </span>
-                  <button
-                    onClick={() => setShowAudioControls(false)}
-                    className="text-neutral-500 hover:text-white text-xs"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                {/* Ambient Crowd Volume Slider */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs text-neutral-400">
-                    <span>Crowd Noise Volume</span>
-                    <span className="font-mono text-cyan-400">
-                      {Math.round(soundManager.ambientVolume * 100)}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value={soundManager.ambientVolume}
-                    onChange={(e) => soundManager.setAmbientVolume(parseFloat(e.target.value))}
-                    className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
-                  />
-                </div>
-
-                {/* Sound Test Triggers */}
-                <div className="space-y-1.5 pt-1">
-                  <div className="text-[10px] text-neutral-500 uppercase font-semibold">
-                    Test Casino Audio Effects
-                  </div>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <button
-                      onClick={() => soundManager.triggerCoinsClinking()}
-                      className="px-2 py-1 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-[11px] text-neutral-300 font-medium text-left"
-                    >
-                      🪙 Clink Coins
-                    </button>
-                    <button
-                      onClick={() => soundManager.triggerCardFlip()}
-                      className="px-2 py-1 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-[11px] text-neutral-300 font-medium text-left"
-                    >
-                      🃏 Flip Card
-                    </button>
-                    <button
-                      onClick={() => soundManager.announceBetAmount(500, "Dragon")}
-                      className="px-2 py-1 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-[11px] text-neutral-300 font-medium text-left"
-                    >
-                      🎙️ Bet Voice
-                    </button>
-                    <button
-                      onClick={() => soundManager.triggerWinningState(950)}
-                      className="px-2 py-1 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-[11px] text-neutral-300 font-medium text-left"
-                    >
-                      🏆 Win Fanfare
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Quick Guide Toggle */}
-          <button
-            onClick={() => setShowQuickGuide(!showQuickGuide)}
-            className={`px-2 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1 ${
-              showQuickGuide
-                ? "bg-amber-500/20 border-amber-500/50 text-amber-300"
-                : "bg-neutral-900 border-neutral-700 text-neutral-400 hover:text-white"
-            }`}
-            title="Toggle Quick Guide"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Guide</span>
-          </button>
-
-          {onOpenRules && (
-            <button
-              onClick={onOpenRules}
-              className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs font-semibold bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-700 transition-colors"
-              title="Official Rules & Payout Rates"
-            >
-              <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">Rules</span>
-            </button>
-          )}
-
-          {onOpenBetHistory && (
-            <button
-              onClick={onOpenBetHistory}
-              className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition-colors"
-              title="My Bet History & P&L"
-            >
-              <Clock className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">History</span>
-            </button>
-          )}
-
-          <button
-            onClick={onOpenProvablyFair}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs font-semibold bg-neutral-800 hover:bg-neutral-700 text-amber-300 border border-amber-500/30 transition-colors"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Fairness</span>
-          </button>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Main Arena (3 cols) */}
         <div className="lg:col-span-3 space-y-3 sm:space-y-4">
@@ -764,11 +584,11 @@ export const GameTable: React.FC<GameTableProps> = ({
             {/* Circular Countdown Timer */}
             <div className="flex flex-col items-center justify-center my-2 sm:my-4">
               <div className="relative w-18 h-18 sm:w-24 sm:h-24 flex items-center justify-center">
-                <svg className="w-full h-full transform -rotate-90">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 96 96">
                   <circle
                     cx="48"
                     cy="48"
-                    r="45"
+                    r="42"
                     stroke="#1E293B"
                     strokeWidth="6"
                     fill="transparent"
@@ -776,12 +596,12 @@ export const GameTable: React.FC<GameTableProps> = ({
                   <circle
                     cx="48"
                     cy="48"
-                    r="45"
+                    r="42"
                     stroke={
                       timeLeft <= 5 ? "#EF4444" : timeLeft <= 10 ? "#F59E0B" : "#10B981"
                     }
                     strokeWidth="6"
-                    strokeDasharray="283"
+                    strokeDasharray="264"
                     strokeDashoffset={strokeDashoffset}
                     strokeLinecap="round"
                     fill="transparent"
@@ -813,22 +633,22 @@ export const GameTable: React.FC<GameTableProps> = ({
                 </div>
               </div>
 
-              {/* In-Game Tie 50% Refund Alert Banner */}
+              {/* In-Game Tie 100% Loss Alert Banner */}
               {tieRefundBanner && (
-                <div className="mt-2 p-3 rounded-2xl bg-gradient-to-r from-amber-500/25 via-emerald-500/20 to-amber-500/25 border-2 border-amber-400/60 shadow-xl shadow-amber-950/50 flex items-center justify-between gap-3 text-white">
+                <div className="mt-2 p-3 rounded-2xl bg-gradient-to-r from-red-500/25 via-amber-500/20 to-red-500/25 border-2 border-red-500/60 shadow-xl shadow-red-950/50 flex items-center justify-between gap-3 text-white">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-400 text-base shrink-0">
+                    <div className="w-8 h-8 rounded-xl bg-red-500/20 border border-red-400/50 flex items-center justify-center text-red-400 text-base shrink-0">
                       ⚖️
                     </div>
                     <div className="text-left">
-                      <div className="text-xs sm:text-sm font-black text-amber-200 flex items-center gap-2">
-                        <span>টাই রেজাল্ট — ৫০% রিফান্ড ক্রেডিট হয়েছে!</span>
-                        <span className="text-[10px] bg-emerald-500 text-neutral-950 font-black px-1.5 py-0.5 rounded">
-                          +৳{tieRefundBanner.amount.toLocaleString()} ফেরত
+                      <div className="text-xs sm:text-sm font-black text-red-200 flex items-center gap-2">
+                        <span>টাই রেজাল্ট — বাজি বাজেয়াপ্ত হয়েছে!</span>
+                        <span className="text-[10px] bg-red-600 text-white font-black px-1.5 py-0.5 rounded">
+                          -৳{tieRefundBanner.amount.toLocaleString()} লস
                         </span>
                       </div>
                       <p className="text-[10px] sm:text-[11px] text-neutral-300 mt-0.5 leading-snug">
-                        নিয়ম অনুযায়ী টাই হওয়ায় বাজির ৫০% টাকা আপনার একাউন্টে ফেরত দেওয়া হয়েছে এবং বাকি ৫০% কোম্পানি ফান্ডে জমা হয়েছে।
+                        ক্যাসিনো নিয়ম অনুযায়ী টাই হওয়ায় উভয় পক্ষের ড্রাগন এবং টাইগারের সমস্ত বাজি ১০০% বাজেয়াপ্ত (Loss) করা হয়েছে।
                       </p>
                     </div>
                   </div>
@@ -928,17 +748,11 @@ export const GameTable: React.FC<GameTableProps> = ({
                 {/* Card Display */}
                 <div className="my-2">
                   {currentRound?.dragonCard ? (
-                    <div className="w-16 h-22 sm:w-18 sm:h-26 bg-white rounded-xl shadow-2xl border border-neutral-300 flex flex-col items-center justify-between p-2 transform hover:scale-105 transition-transform animate-card-flip">
-                      <span className="text-xs sm:text-sm font-black text-neutral-900 self-start">
-                        {currentRound.dragonCard.rank}
-                      </span>
-                      <span className="text-2xl sm:text-3xl text-red-600">
-                        {currentRound.dragonCard.suit}
-                      </span>
-                      <span className="text-xs sm:text-sm font-black text-neutral-900 self-end">
-                        {currentRound.dragonCard.rank}
-                      </span>
-                    </div>
+                    <PlayingCardComponent
+                      card={currentRound.dragonCard}
+                      side="DRAGON"
+                      isWinner={currentRound.result === "DRAGON"}
+                    />
                   ) : (
                     <div className="w-16 h-22 sm:w-18 sm:h-26 rounded-xl border-2 border-dashed border-blue-500/40 bg-blue-950/40 flex flex-col items-center justify-center text-blue-400/80 font-mono text-xs">
                       <span className="font-bold text-xs">DRAGON</span>
@@ -990,17 +804,11 @@ export const GameTable: React.FC<GameTableProps> = ({
                 {/* Card Display */}
                 <div className="my-2">
                   {currentRound?.tigerCard ? (
-                    <div className="w-16 h-22 sm:w-18 sm:h-26 bg-white rounded-xl shadow-2xl border border-neutral-300 flex flex-col items-center justify-between p-2 transform hover:scale-105 transition-transform animate-card-flip">
-                      <span className="text-xs sm:text-sm font-black text-neutral-900 self-start">
-                        {currentRound.tigerCard.rank}
-                      </span>
-                      <span className="text-2xl sm:text-3xl text-neutral-900">
-                        {currentRound.tigerCard.suit}
-                      </span>
-                      <span className="text-xs sm:text-sm font-black text-neutral-900 self-end">
-                        {currentRound.tigerCard.rank}
-                      </span>
-                    </div>
+                    <PlayingCardComponent
+                      card={currentRound.tigerCard}
+                      side="TIGER"
+                      isWinner={currentRound.result === "TIGER"}
+                    />
                   ) : (
                     <div className="w-16 h-22 sm:w-18 sm:h-26 rounded-xl border-2 border-dashed border-red-500/40 bg-red-950/40 flex flex-col items-center justify-center text-red-400/80 font-mono text-xs">
                       <span className="font-bold text-xs">TIGER</span>
@@ -1029,32 +837,32 @@ export const GameTable: React.FC<GameTableProps> = ({
               </div>
             </div>
 
-            {/* Tie Outcome & 50% Refund Rule Bar (Non-Bettable) */}
+            {/* Tie Outcome & 100% Loss Rule Bar (Non-Bettable) */}
             <div
               className={`rounded-xl p-2 sm:p-2.5 border transition-all flex flex-col sm:flex-row items-center justify-between gap-2 px-3 ${
                 currentRound?.result === "TIE"
-                  ? "bg-gradient-to-r from-emerald-950/80 via-emerald-900/60 to-emerald-950/80 border-emerald-400 text-white shadow-xl ring-2 ring-emerald-400/50 animate-pulse"
+                  ? "bg-gradient-to-r from-red-950/80 via-red-900/60 to-red-950/80 border-red-500 text-white shadow-xl ring-2 ring-red-500/50 animate-pulse"
                   : "bg-neutral-950/60 border-neutral-800 text-neutral-400"
               }`}
             >
               <div className="flex items-center gap-2">
-                <div className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                  <Scale className="w-3.5 h-3.5 text-emerald-400" />
+                <div className="text-xs font-black uppercase tracking-wider text-red-400 flex items-center gap-1.5">
+                  <Scale className="w-3.5 h-3.5 text-red-400" />
                   <span>TIE</span>
-                  <span className="bg-emerald-500/20 text-emerald-300 text-[9px] font-bold px-1.5 py-0.2 rounded border border-emerald-500/30 uppercase">
-                    50% Refund
+                  <span className="bg-red-500/20 text-red-300 text-[9px] font-bold px-1.5 py-0.2 rounded border border-red-500/30 uppercase">
+                    100% Loss (bajeapto)
                   </span>
                 </div>
               </div>
               
               <div className="text-[10px] sm:text-[11px] text-neutral-400 text-center sm:text-right">
                 {currentRound?.result === "TIE" ? (
-                  <span className="text-emerald-300 font-black">
-                    🎉 টাই ফলাফল — বাজির ৫০% টাকা ফেরত প্রদান করা হয়েছে!
+                  <span className="text-red-400 font-black">
+                    🚨 টাই ফলাফল — ক্যাসিনো রুলস অনুযায়ী উভয় পক্ষের বাজি সম্পূর্ণ বাজেয়াপ্ত (Loss) হয়েছে!
                   </span>
                 ) : (
                   <span>
-                    উভয় কার্ড সমান হলে ৫০% টাকা একাউন্টে ফেরত পাওয়া যাবে।
+                    টাই রেজাল্ট হলে ক্যাসিনো রুলস অনুযায়ী উভয় পক্ষের বাজি ১০০% বাজেয়াপ্ত (Loss) হবে।
                   </span>
                 )}
               </div>
@@ -1143,23 +951,151 @@ export const GameTable: React.FC<GameTableProps> = ({
 
         {/* Sidebar (1 col): Live Action Feed, Chat, Guide, Tk Return or Shoe Roadmap */}
         <div className="space-y-3">
-          {/* Tab Selection Bar */}
-          <div className="flex items-center bg-[#161B26] p-1.5 rounded-xl border border-white/10 text-xs font-semibold shadow-inner gap-1 overflow-x-auto">
-            <button
-              onClick={() => {
-                setSidebarTab("guide");
-                soundManager.playButtonClick();
-              }}
-              className={`flex-1 min-w-0 py-1.5 px-2 rounded-lg font-bold flex items-center justify-center gap-1 transition-all shrink-0 ${
-                sidebarTab === "guide"
-                  ? "bg-amber-500 text-neutral-950 shadow-md shadow-amber-500/20"
-                  : "text-neutral-300 hover:text-white hover:bg-[#202736]"
-              }`}
-            >
-              <HelpCircle className="w-3.5 h-3.5 shrink-0 text-neutral-950 font-bold" />
-              <span className="truncate">Guide</span>
-            </button>
+          {/* Player Profile & Quick VIP Status Card (Direct on Homepage) */}
+          <div className="bg-[#111622] border border-amber-500/30 rounded-2xl p-3 sm:p-3.5 shadow-xl flex items-center justify-between gap-3 group">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 p-0.5 shadow-md flex items-center justify-center shrink-0">
+                <div className="w-full h-full bg-[#0B0E14] rounded-[9px] flex items-center justify-center text-amber-400 font-black text-sm">
+                  {user.username.slice(0, 2).toUpperCase()}
+                </div>
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs sm:text-sm font-black text-white truncate">{user.username}</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30 uppercase">
+                    {user.vipTier}
+                  </span>
+                </div>
+                <div className="text-[10px] text-neutral-400 font-mono flex items-center gap-1.5 mt-0.5">
+                  <span className="text-emerald-400 font-semibold">{user.stats?.winRate ?? 64.8}% Win</span>
+                  <span>•</span>
+                  <span>{user.gamesPlayed || user.stats?.totalHandsPlayed || 0} Hands</span>
+                </div>
+              </div>
+            </div>
 
+            {onOpenProfile && (
+              <button
+                onClick={onOpenProfile}
+                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 font-black text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0 active:scale-95 cursor-pointer"
+                title="প্রোফাইল দেখতে ক্লিক করুন"
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>প্রোফাইল</span>
+              </button>
+            )}
+          </div>
+
+          {/* Audio Settings & Quick Actions Panel */}
+          <div className="bg-[#111622] border border-white/5 rounded-2xl p-3.5 space-y-3 shadow-xl">
+            {/* Audio Toggles & Guide Toggles Grid */}
+            <div className="grid grid-cols-3 gap-1.5">
+              {/* Sound FX Toggle */}
+              <button
+                onClick={() => {
+                  soundManager.toggleSfx();
+                  soundManager.playButtonClick();
+                }}
+                title={soundManager.sfxEnabled ? "Mute SFX" : "Unmute SFX"}
+                className={`py-2 px-2 rounded-xl border text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all ${
+                  soundManager.sfxEnabled
+                    ? "bg-neutral-800 border-neutral-700 text-emerald-400 hover:bg-neutral-700"
+                    : "bg-neutral-950/40 border-neutral-800 text-neutral-500 hover:text-neutral-400"
+                }`}
+              >
+                {soundManager.sfxEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                <span>SFX</span>
+              </button>
+
+              {/* Croupier Voice Toggle */}
+              <button
+                onClick={() => {
+                  soundManager.toggleVoice();
+                  soundManager.playButtonClick();
+                }}
+                title={soundManager.voiceEnabled ? "Mute Voice" : "Unmute Voice"}
+                className={`py-2 px-2 rounded-xl border text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all ${
+                  soundManager.voiceEnabled
+                    ? "bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20"
+                    : "bg-neutral-950/40 border-neutral-800 text-neutral-500 hover:text-neutral-400"
+                }`}
+              >
+                {soundManager.voiceEnabled ? <Mic className="w-3.5 h-3.5 text-amber-400" /> : <MicOff className="w-3.5 h-3.5" />}
+                <span>Voice</span>
+              </button>
+
+              {/* Guide Toggle */}
+              <button
+                onClick={() => {
+                  setShowQuickGuide(!showQuickGuide);
+                  soundManager.playButtonClick();
+                }}
+                className={`py-2 px-2 rounded-xl border text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all ${
+                  showQuickGuide
+                    ? "bg-amber-500 text-neutral-950 border-amber-400"
+                    : "bg-neutral-950/40 border-neutral-800 text-neutral-400 hover:text-white"
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Guide</span>
+              </button>
+            </div>
+
+            {/* Quick action buttons row (Rules, History, Fairness) */}
+            <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-white/5">
+              {onOpenRules && (
+                <button
+                  onClick={onOpenRules}
+                  className="py-1.5 px-1.5 rounded-xl text-[10px] font-bold bg-neutral-900/60 hover:bg-neutral-800 text-neutral-300 border border-neutral-800/80 flex items-center justify-center gap-1 transition-all"
+                >
+                  <BookOpen className="w-3 h-3 text-amber-400 shrink-0" />
+                  <span>Rules</span>
+                </button>
+              )}
+              {onOpenBetHistory && (
+                <button
+                  onClick={onOpenBetHistory}
+                  className="py-1.5 px-1.5 rounded-xl text-[10px] font-bold bg-neutral-900/60 hover:bg-neutral-800 text-neutral-300 border border-neutral-800/80 flex items-center justify-center gap-1 transition-all"
+                >
+                  <Clock className="w-3 h-3 text-amber-400 shrink-0" />
+                  <span>History</span>
+                </button>
+              )}
+              <button
+                onClick={onOpenProvablyFair}
+                className="py-1.5 px-1.5 rounded-xl text-[10px] font-bold bg-neutral-900/60 hover:bg-[#1f293d] text-amber-300 border border-amber-500/20 flex items-center justify-center gap-1 transition-all"
+              >
+                <ShieldCheck className="w-3 h-3 text-amber-400 shrink-0" />
+                <span>Fairness</span>
+              </button>
+            </div>
+
+            {/* Embedded Audio suite panel */}
+            <div className="pt-2 border-t border-white/5 space-y-2.5">
+              <div className="flex items-center justify-between text-[11px] text-neutral-400">
+                <span className="flex items-center gap-1">
+                  <Headphones className="w-3 h-3 text-cyan-400" />
+                  <span>Crowd Noise Volume</span>
+                </span>
+                <span className="font-mono text-cyan-400">
+                  {Math.round(soundManager.ambientVolume * 100)}%
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={soundManager.ambientVolume}
+                onChange={(e) => soundManager.setAmbientVolume(parseFloat(e.target.value))}
+                className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+              />
+            </div>
+          </div>
+
+          {/* Tab Selection Bar: 1st Action, 2nd Chat, 3rd Trend, 4th Guide */}
+          <div className="flex items-center bg-[#161B26] p-1.5 rounded-xl border border-white/10 text-xs font-semibold shadow-inner gap-1 overflow-x-auto">
+            {/* 1st: Action Button */}
             <button
               onClick={() => {
                 setSidebarTab("liveAction");
@@ -1186,24 +1122,7 @@ export const GameTable: React.FC<GameTableProps> = ({
               )}
             </button>
 
-            <button
-              onClick={() => {
-                setSidebarTab("returns");
-                soundManager.playButtonClick();
-              }}
-              className={`flex-1 min-w-0 py-1.5 px-2 rounded-lg font-bold flex items-center justify-center gap-1 transition-all relative shrink-0 ${
-                sidebarTab === "returns"
-                  ? "bg-amber-500 text-neutral-950 shadow-md shadow-amber-500/20"
-                  : "text-neutral-300 hover:text-white hover:bg-[#202736]"
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span className="whitespace-nowrap truncate">Tk Return</span>
-              {activeConfirmedBet && (
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping absolute top-1 right-1" />
-              )}
-            </button>
-
+            {/* 2nd: Chat Button */}
             <button
               onClick={() => {
                 setSidebarTab("chat");
@@ -1218,6 +1137,7 @@ export const GameTable: React.FC<GameTableProps> = ({
               <span className="truncate">Chat</span>
             </button>
 
+            {/* 3rd: Trend / Roadmap Button */}
             <button
               onClick={() => {
                 setSidebarTab("roadmap");
@@ -1230,6 +1150,22 @@ export const GameTable: React.FC<GameTableProps> = ({
               }`}
             >
               <span className="truncate">Trend</span>
+            </button>
+
+            {/* 4th: Guide Button */}
+            <button
+              onClick={() => {
+                setSidebarTab("guide");
+                soundManager.playButtonClick();
+              }}
+              className={`flex-1 min-w-0 py-1.5 px-2 rounded-lg font-bold flex items-center justify-center gap-1 transition-all shrink-0 ${
+                sidebarTab === "guide"
+                  ? "bg-amber-500 text-neutral-950 shadow-md shadow-amber-500/20"
+                  : "text-neutral-300 hover:text-white hover:bg-[#202736]"
+              }`}
+            >
+              <HelpCircle className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+              <span className="truncate">Guide</span>
             </button>
           </div>
 
@@ -1274,12 +1210,12 @@ export const GameTable: React.FC<GameTableProps> = ({
                   <span className="font-black text-red-400 font-mono tabular-nums">১.৯ গুণ রিটার্ন</span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-[#0B0E14] border border-emerald-500/30 flex items-center justify-between shadow-sm">
+                <div className="p-3 rounded-xl bg-[#0B0E14] border border-red-500/30 flex items-center justify-between shadow-sm">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0 shadow-sm shadow-emerald-500/50" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0 shadow-sm shadow-red-500/50" />
                     <span className="font-bold text-white truncate">TIE (উভয় কার্ড সমান)</span>
                   </div>
-                  <span className="font-black text-emerald-400 font-mono text-right text-[11px] shrink-0 pl-2">৫০% বাজি অটো ফেরত (বাজি নিষিদ্ধ)</span>
+                  <span className="font-black text-red-400 font-mono text-right text-[11px] shrink-0 pl-2">১০০% বাজি বাজেয়াপ্ত (Loss) (বাজি নিষিদ্ধ)</span>
                 </div>
               </div>
 
@@ -1331,35 +1267,6 @@ export const GameTable: React.FC<GameTableProps> = ({
               currentUser={user}
               roundNumber={currentRound?.roundNumber}
               onFollowBet={handleFollowBet}
-            />
-          )}
-
-          {sidebarTab === "returns" && (
-            <UserTkReturnMonitor
-              user={user}
-              currentRoundBets={currentRoundBets}
-              activeConfirmedBet={
-                activeConfirmedBet
-                  ? {
-                      ...activeConfirmedBet,
-                      balanceType: user.balanceType,
-                    }
-                  : null
-              }
-              roundNumber={currentRound?.roundNumber}
-              tableName={currentRound?.tableName}
-              onOpenBetHistory={onOpenBetHistory}
-              onRefreshWallet={async () => {
-                try {
-                  const res = await fetch(`/api/wallet/${user.userId}`);
-                  if (res.ok) {
-                    const data = await res.json();
-                    onUpdateWallet(data);
-                  }
-                } catch (e) {
-                  console.error(e);
-                }
-              }}
             />
           )}
 

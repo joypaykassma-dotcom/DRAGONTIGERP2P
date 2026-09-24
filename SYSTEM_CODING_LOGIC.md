@@ -61,7 +61,30 @@ Every game round guarantees cryptographic transparency using standard SHA-256 co
 
 ---
 
-## 5. Real-Time Synchronous Multiplayer Betting & Dual-Channel Live Chat
+## 5. Clean UI Architecture & Dedicated Menu Overlay Navigation
+To ensure zero distraction and maximum table focus, the primary dashboard area is stripped of all secondary clutter:
+1. **Primary Screen Focus:**
+   - On initial page load (`activeTab === "game"`), only the **GameTable** is rendered in the main dashboard viewport.
+   - Secondary components (`Leaderboard`, `P2PLobby`, and `RegulatoryFooter`) are conditionally rendered only when explicitly summoned via navigation or secondary tab selection.
+2. **Unified Side Navigation Drawer (`SideNavDrawer`):**
+   - The unified menu overlay organizes all secondary interfaces: Live Dealer stream status, Public User List & Ledger, Provably Fair Verification, Rules of the Game, Audio/Crowd Settings, Liquidity Reserve, Merchant and Admin panels.
+   - Live Dealer commentary and croupier status have been cleanly relocated from the homepage into this drawer.
+3. **Sidebar Tabs Ordering & Cleanup in GameTable:**
+   - **1st Tab:** `Action` (Live Action bet tracker with real-time bet counters).
+   - **2nd Tab:** `Chat` (Real-time live player chat).
+   - **3rd Tab:** `Trend` (Shoe Roadmap & Bead Plate ticker).
+   - **4th Tab:** `Guide` (Compact beginner guide).
+   - **Tk Return Button Removed:** Removed entirely from codebase; unmatched refund guarantees are handled automatically in real-time by the P2P matching engine with instant wallet credit.
+4. **Homepage Player Profile Card:**
+   - A dedicated Player Profile card and button are positioned directly on the home page above the sidebar tabs, displaying player avatar, username, VIP tier, win rate, total hands played, and one-click profile modal access.
+5. **Interactive Active Online Users Modal (`ActiveOnlineUsersModal`):**
+   - Clicking the online player counter pill in the top navigation bar opens a real-time modal fetching and displaying all active players, VIP tiers, real/demo balances, last active timestamps, and geo-locations from `/api/transparency/users`.
+6. **Data Integrity & Codebase Preservation:**
+   - All Prisma schemas, database migrations, financial ledgers, and matching engine codes are 100% maintained and intact.
+
+---
+
+## 6. Real-Time Synchronous Multiplayer Betting & Dual-Channel Live Chat
 1. **Synchronous Multi-User Betting:**
    - All connected players place wagers simultaneously in real-time.
    - Every round's orderbook aggregates live Dragon vs Tiger stakes in milliseconds.
@@ -72,7 +95,7 @@ Every game round guarantees cryptographic transparency using standard SHA-256 co
 
 ---
 
-## 6. Responsive UI & Mobile Vertical Stack Layout
+## 7. Responsive UI & Mobile Vertical Stack Layout
 1. **Mobile Vertical Stack Layout (`GameTable`):**
    - On mobile devices (`< md`), Dragon and Tiger arenas stack vertically (`flex flex-col md:grid md:grid-cols-2`), giving each side full touch width.
    - High-contrast card displays with flip animations.
@@ -89,7 +112,7 @@ Every game round guarantees cryptographic transparency using standard SHA-256 co
 
 ---
 
-## 7. P2P Referral & Affiliate RevShare Engine
+## 8. P2P Referral & Affiliate RevShare Engine
 ### Mathematical RevShare Formulation
 Since the house does not take losses from players, referral commissions are funded directly out of the platform's 5% duel commission:
 - **Platform Fee:** $F = \text{Matched Stake} \times 5\%$
@@ -106,7 +129,7 @@ Because commission is a fixed subset of collected revenue ($20\% - 50\%$ of $5\%
 
 ---
 
-## 8. Total Company Profit & Real-Time Rake Accounting Engine
+## 9. Total Company Profit & Real-Time Rake Accounting Engine
 1. **Mathematical Profit Sources:**
    - **5% P2P Match Fee:** Collected strictly on net winning side of matched wagers:
      $$\text{Match Revenue} = \text{Matched Pool} \times 2 \times 5\%$$
@@ -120,35 +143,33 @@ Because commission is a fixed subset of collected revenue ($20\% - 50\%$ of $5\%
 
 ---
 
-## 9. Dynamic Build Versioning
+## 10. Dynamic Build Versioning
 - **Format:** `yyyy.MM.dd.HH.mm` (e.g. `2026.09.23.13.54`)
 - Displayed prominently in the top right corner of the Login Screen.
 - Auto-updated upon every successful deployment and compile.
 
 ---
 
-## 10. Minimalist High-End Arena UI & Zero-Clutter Layout Engine
+## 11. Minimalist High-End Arena UI & Zero-Clutter Layout Engine
 1. **Collapsed Onboarding Banners:**
    - The bulky 3-Step Beginner Guide box has been removed from the main arena hero view (`showQuickGuide` defaults to `false`). Full guides and rules are accessible via the right sidebar "Guide" tab and the top "Rules" modal.
 2. **Decluttered Battle Zone & Clean Affordances:**
-   - Removed intrusive helper text cues (`👉 চাপুন: ...`, `👉 ধাপ ৩: ...`) across betting cards and action bars.
+   - Removed intrusive helper text cues across betting cards and action bars.
    - Cleaned up Dragon & Tiger pools to show concise wager multipliers (`+৳100`, `৳100 ➔ ৳190`).
-   - Simplified the Tie outcome alert bar into an elegant, non-obtrusive status badge (`TIE | 50% Refund`).
+   - Simplified the Tie outcome alert bar into an elegant, non-obtrusive status badge.
 3. **Streamlined Chip & Action Dock:**
    - Formatted the chip selection toolbar with high contrast `SELECT CHIP:` label and circular touch chips.
    - Action buttons (Repeat, 2x Double, Auto Bet, Clear, Confirm) organized in a dark glass dock with zero clutter.
 4. **Targeted Focused Elements Decluttering:**
-   - Top Croupier Live Banner condensed into a single slim 1-line bar, moving voice/SFX toggles into icon buttons and Audio modal dropdown.
-   - Beginner 3-step guide box strictly hidden when inactive (`showQuickGuide === false`), freeing full vertical viewport for live card dealing table.
-   - Sidebar tab selection dock refined with high-contrast active tabs (`Guide`, `Action`, `Tk Return`, `Chat`, `Trend`).
-5. **Responsive Dropdown Overflow Protection:**
-   - Modified the mobile/tablet compact table dropdown trigger button (`selectedTable` switcher in header) to use modern adaptive styling `hidden min-[360px]:flex lg:hidden` with strict character-based content truncating (`max-w-[60px]`). This completely prevents physical layout overlaps and side-scrolling on ultra-narrow mobile viewports (e.g. <360px) while maintaining access through the drawer menu.
+   - Moved the live croupier commentary bar, volume/ambient adjustments, sound/voice toggles, and action menu shortcuts entirely out of the top header area into the Menu drawer and compact sidebar dock.
+   - Sidebar tab selection dock refined with high-contrast active tabs (`Action`, `Chat`, `Trend`, `Guide`).
+   - Unmatched money refund guarantees are automatically executed by the P2P matching engine in real-time.
 
 ---
 
-## 11. Robust Session Integrity & API Error Resilience
+## 12. Robust Session Integrity & API Error Resilience
 1. **Content-Type & Payload Validation:**
-   - Frontend `fetchUser` polling now strictly validates response headers for `application/json` and verifies that the payload contains a valid `userId`.
+   - Frontend `fetchUser` polling strictly validates response headers for `application/json` and verifies that the payload contains a valid `userId`.
    - Prevents JSON parsing exceptions (`Unexpected token '<'`) caused by unhandled route redirection returning fallback HTML (`index.html`) in Express or Vite middleware.
 2. **Graceful Failover Routing:**
    - Any corrupt or empty session states (`userId === "undefined"`) automatically trigger `handleLogout` to reset the active viewport.
